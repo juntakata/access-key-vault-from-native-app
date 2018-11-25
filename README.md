@@ -17,30 +17,36 @@ Shows how to access Azure Key Vault from PowerShell
 9. [+ 追加] から [Azure Key Vault] を選択します。
 10. [Have full access to the Azure Key Vault service] を選択して保存を押下します。
 
-## アプリの設定内容の変更
-
-AccessKeyVaultFromNativeApp.ps1 を開き、以下の箇所を登録したアプリに合わせて変更します。$tenantId を貴社のテナントに、$clientId を登録したアプリの ID に変更ください。$keyvault には、事前に作成いただいている Key Vault 名を指定します。
-
-```powershell
-$tenantId = "yourtenant.onmicrosoft.com" # or GUID "01234567-89AB-CDEF-0123-456789ABCDEF"
-$clientId = "FEDCBA98-7654-3210-FEDC-BA9876543210"
-$keyvault = "yourkeyvaultname"
-$redirectUri = "urn:ietf:wg:oauth:2.0:oob"
-$resource = "https://vault.azure.net" 
-```
-
 ## アプリの実行
 
-GetAdModuleByNuget.ps1 を実行ください。実行すると Tools フォルダーができ、フォルダー内に必要なモジュールが配置されます。本スクリプトは、もう一つの AccessKeyVaultFromNativeApp.ps1 の実行に必要なモジュールを取得してくるためのものです。この状態で、事前に内容を貴社に合わせておいた AccessKeyVaultFromNativeApp.ps1 を実行します。認証画面が表示されますので、Key Vault の処理を行いたいユーザーでサインインすることで、そのユーザーで処理が行われます。
+まず、GetAdModuleByNuget.ps1 を実行します。実行すると Tools フォルダーができ、フォルダー内に必要なモジュールが配置されます。本スクリプトは、もう一つの AccessKeyVaultFromNativeApp.ps1 の実行に必要なモジュールを取得してくるためのものです。この状態で、事前に内容を貴社に合わせておいた AccessKeyVaultFromNativeApp.ps1 を実行します。
 
 本スクリプトでは以下の操作を順に行っています。
 
-- Key Vault キーの作成 (TestKey)
-- Key Vault キーの読み取り (TestKey)
-- Key Vautl シークレットの作成 (TestSecret)
-- Key Vautl シークレットの読み取り (TestSecret)
+- Key Vault アクセス用のアクセストークンの取得 (Get-KeyVaultUserAccessToken)
+- キー (RSA) の作成 (Create-KeyVaultRsaKey)
+- キーの読み取り (Get-KeyVaultKey)
+- シークレットの作成 (Create-KeyVaultSecret)
+- シークレットの読み取り (Get-KeyVaultSecret)
+- RSA-OAEP を用いた Key Vault 側での暗号化 (Encrypt-KeyVaultDataRsaOaep)
+- RSA-OAEP を用いたローカルでの暗号化 (Encrypt-KeyVaultDataRsaOaepLocal)
+- RSA-OAEP を用いた Key Vault 側での復号 (Decrypt-KeyVaultDataRsaOae)
+- RSA256 を用いた Key Vault 側での署名 (Sign-KeyVaultDataRsa256)
+- RSA256 を用いた Key Vault での署名検証 (Verify-KeyVaultDataRsa256)
+- RSA256 を用いたローカルでの署名検証 (Verify-KeyVaultDataRsa256Local)
 
 それぞれの詳細は以下のとおりです。
+
+### Key Vault アクセス用のアクセストークンの取得 (Get-KeyVaultUserAccessToken)
+
+NuGet から取得したモジュールの AcquireTokenAsync メソッドを用いてユーザー認証を行い、アクセストークンを取得します。
+
+```powershell
+$accessToken = Get-KeyVaultUserAccessToken `
+            -tenantId "yourtenant.onmicrosoft.com" `
+            -clientId "FEDCBA98-7654-3210-FEDC-BA9876543210" `
+            -redirectUri "urn:ietf:wg:oauth:2.0:oob"
+```
 
 ### Key Vault キーの作成と読み取り
 
