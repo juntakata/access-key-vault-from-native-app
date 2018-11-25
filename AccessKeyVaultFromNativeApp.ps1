@@ -403,8 +403,8 @@ Function Convert-FromBase64ToBase64Url {
 # Get Access token
 #
 $accessToken = Get-KeyVaultUserAccessToken `
-            -tenantId "jutakata02.onmicrosoft.com" `
-            -clientId "c6f9e14b-dc98-40b9-aa3f-e9a16860c544" `
+            -tenantId "yourtenant.onmicrosoft.com" `
+            -clientId "FEDCBA98-7654-3210-FEDC-BA9876543210" `
             -redirectUri "urn:ietf:wg:oauth:2.0:oob"
 
 #
