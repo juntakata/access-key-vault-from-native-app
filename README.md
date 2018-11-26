@@ -48,18 +48,22 @@ $accessToken = Get-KeyVaultUserAccessToken `
             -redirectUri "urn:ietf:wg:oauth:2.0:oob"
 ```
 
-### Key Vault キーの作成と読み取り
+### キー (RSA) の作成 (Create-KeyVaultRsaKey)
 
-キーの作成要求は以下のとおりです。
+キーの作成要求は以下のとおりです。アクセス トークンに加えて、Key Vault 名、作成したいキーの名前を指定します。これにより kty として RSA を指定したキーが作られます。
 
+```powershell
+$keyCreate = Create-KeyVaultRsaKey `
+            -accessToken $accessToken `
+            -vaultName "keyvlt-prod-kv1" `
+            -keyName "testkey"
 ```
-POST https://yourkeyvaultname.vault.azure.net//keys/ContosoFirstKey/create?api-version=2016-10-01
-Authorization: Bearer eyJ0eXAiOi{省略}3lISmxZIn0.eyJhdWQiOi{省略}joiMS4wIn0.FDlzA1xpic{省略}Nj_6yECdIw
-```
 
-以下の Body を POST で送信しています。
+以下の要求を送信しています。
 
 ```json
+POST https://{vaultName}.vault.azure.net/keys/{keyName}/create?api-version=7.0
+
 {
   "kty": "RSA",
   "attributes": {
@@ -68,12 +72,23 @@ Authorization: Bearer eyJ0eXAiOi{省略}3lISmxZIn0.eyJhdWQiOi{省略}joiMS4wIn0.
 }
 ```
 
-得られる応答 (読み取り結果) は以下のようになります。
+### キーの読み取り (Get-KeyVaultKey)
+
+キーの読み取りを行うには以下のようにします。アクセス トークンに加えて、Key Vault 名、キーの名前を指定します。
+
+```powershell
+$keyGet = Get-KeyVaultKey `
+            -accessToken $accessToken `
+            -vaultName "keyvlt-prod-kv1" `
+            -keyName "testkey"
+```
+
+得られる応答は以下のようになります。
 
 ```json
 {
     "key": {
-        "kid": "https://yourkeyvaultname.vault.azure.net/keys/TestKey/25f66f574aa64bc5829139082e3ace63",
+        "kid": "https://yourkeyvaultname.vault.azure.net/keys/testKey/25f66f574aa64bc5829139082e3ace63",
         "kty": "RSA",
         "key_ops": [
             "encrypt",
@@ -95,18 +110,23 @@ Authorization: Bearer eyJ0eXAiOi{省略}3lISmxZIn0.eyJhdWQiOi{省略}joiMS4wIn0.
 }
 ```
 
-### Key Vault シークレットの作成と読み取り
+### シークレットの作成 (Create-KeyVaultSecret)
 
 シークレットの作成要求は以下のとおりです。
 
-```
-PUT https://yourkeyvaultname.vault.azure.net//secrets/SQLPassword?api-version=2016-10-01 
-Authorization: Bearer eyJ0eXAiOi{省略}3lISmxZIn0.eyJhdWQiOi{省略}joiMS4wIn0.FDlzA1xpic{省略}Nj_6yECdIw
+```powershell
+$secretCreate = Create-KeyVaultSecret `
+            -accessToken $accessToken `
+            -vaultName "keyvlt-prod-kv1" `
+            -secretName "testsecret" `
+            -secretValue 'Pa$$w0rd'
 ```
 
-以下の Body を PUT で送信しています。
+以下の要求を送信しています。
 
 ```json
+POST https://{vaultName}.vault.azure.net/secrets/{secretName}?api-version=7.0
+
 {
   "value": "Pa$$w0rd",
   "attributes": {
@@ -115,17 +135,157 @@ Authorization: Bearer eyJ0eXAiOi{省略}3lISmxZIn0.eyJhdWQiOi{省略}joiMS4wIn0.
 }
 ```
 
+### シークレットの読み取り (Get-KeyVaultSecret)
+
+以下に用にすることで、指定したシークレットを読み取り可能です。アクセストークンに加え、Key Vault 名、シークレットの名前を指定します。
+
+```powershell
+$secretGet = Get-KeyVaultSecret `
+            -accessToken $accessToken `
+            -vaultName "keyvlt-prod-kv1" `
+            -secretName "testsecret"
+```
+
 得られる応答 (読み取り結果) は以下のようになります。
 
 ```json
 {
     "value": "Pa$$w0rd",
-    "id": "https://yourkeyvaultname.vault.azure.net/secrets/TestSecret/886048f39c0d48c59bf66b25a4a0305c",
+    "id": "https://yourkeyvaultname.vault.azure.net/secrets/testsecret/886048f39c0d48c59bf66b25a4a0305c",
     "attributes": {
         "enabled": true,
         "created": 1536834955,
         "updated": 1536834955,
         "recoveryLevel": "Purgeable"
     }
+}
+```
+
+### RSA-OAEP を用いた Key Vault 側での暗号化 (Encrypt-KeyVaultDataRsaOaep)
+
+Hello World! という文字列をバイト列に変換し、暗号化 (RSA-OAEP) します。Key Vault が保持している公開鍵を用いて暗号化を要求します。アクセストークンに加え、Key Vault 名、キー名、バージョン、暗号化したいバイト列を渡します。結果は、Base64url 形式で返されます。
+
+```powershell
+$plainString = "Hello World!"
+$plainByteArray = [System.Text.Encoding]::Unicode.GetBytes($plainString)
+
+$encryptResult = Encrypt-KeyVaultDataRsaOaep `
+            -accessToken $accessToken `
+            -vaultName "keyvlt-prod-kv1" `
+            -keyName "testkey" `
+            -keyVersion "" `
+            -plainByteArray $plainByteArray
+```
+
+### RSA-OAEP を用いたローカルでの暗号化 (Encrypt-KeyVaultDataRsaOaepLocal)
+
+Hello World! という文字列をバイト列に変換し、暗号化します。Key Vault から取得した RSA の公開鍵 (modulus と exponent) を用いてローカルで暗号化 (RSA-OAEP) しています。結果は、Base64url 形式で返されます。
+
+```powershell
+$plainString = "Hello World!"
+$plainByteArray = [System.Text.Encoding]::Unicode.GetBytes($plainString)
+
+$key = Get-KeyVaultKey `
+            -accessToken $accessToken `
+            -vaultName "keyvlt-prod-kv1" `
+            -keyName "testkey"
+
+$modulusBase64 = Convert-FromBase64UrlToBase64($key.key.n)
+$modulus = [Convert]::FromBase64String($modulusBase64)
+
+$exponentBase64 = Convert-FromBase64UrlToBase64($key.key.e)
+$exponent = [Convert]::FromBase64String($exponentBase64)
+
+$encryptValue = Encrypt-KeyVaultDataRsaOaepLocal `
+            -modulus $modulus `
+            -exponent $exponent `
+            -plainByteArray $plainByteArray
+```
+
+### RSA-OAEP を用いた Key Vault 側での復号 (Decrypt-KeyVaultDataRsaOae)
+
+```powershell
+$decryptResult = Decrypt-KeyVaultDataRsaOaep `
+            -accessToken $accessToken `
+            -vaultName "keyvlt-prod-kv1" `
+            -keyName "testkey" `
+            -keyVersion "" `
+            -cipherBase64Url $encryptResult
+
+If ($plainString -eq [System.Text.Encoding]::Unicode.GetString($decryptResult)) {
+    Write-Host "Encryption and decryption worked succesfully!"
+}
+else {
+    Write-Host "Something went wrong..."
+}
+```
+
+### RSA256 を用いた Key Vault 側での署名 (Sign-KeyVaultDataRsa256)
+
+Key Vault が保持する秘密鍵を用いて、バイト列 (Hello World!) のハッシュ (SHA-256) に署名します。事前にハッシュを求め、得られたダイジェストをアクセストークン、Key Vault 名、キー名、バージョンと共に渡します。結果が Base64url として得られます。
+
+```powershell
+$plainString = "Hello World!"
+$plainByteArray = [System.Text.Encoding]::Unicode.GetBytes($plainString)
+
+$sha256 = New-Object System.Security.Cryptography.SHA256CryptoServiceProvider
+$hash = $sha256.ComputeHash($plainByteArray)
+
+$signatureBase64Url = Sign-KeyVaultDataRsa256 `
+            -accessToken $accessToken `
+            -vaultName "keyvlt-prod-kv1" `
+            -keyName "testkey" `
+            -keyVersion "" `
+            -digestByteArray $hash
+```
+
+### RSA256 を用いた Key Vault での署名検証 (Verify-KeyVaultDataRsa256)
+
+Key Vault が保持する公開鍵を用いて、署名を検証します。アクセストークン、Key Vault 名、キー名、バージョンと共に、Base64url の署名文字列、比較したいダイジェストを渡します。結果が true/false として得られます。
+
+```powershell
+$verifyResult = Verify-KeyVaultDataRsa256 `
+            -accessToken $accessToken `
+            -vaultName "keyvlt-prod-kv1" `
+            -keyName "testkey" `
+            -keyVersion "" `
+            -signatureBase64Url $signResult `
+            -digestByteArray $hash
+
+If ($verifyResult) {
+    Write-Host "Signing and verification worked succesfully!"
+}
+else {
+    Write-Host "Something went wrong..."
+}
+```
+
+### RSA256 を用いたローカルでの署名検証 (Verify-KeyVaultDataRsa256Local)
+
+Key Vault から取得した公開鍵を用いて、ローカルで署名を検証します。RSA の modulus と exponent、検証したいバイト列、Base64url の署名文字列を渡します。結果が true/false として得られます。
+
+```powershell
+$key = Get-KeyVaultKey `
+            -accessToken $accessToken `
+            -vaultName "keyvlt-prod-kv1" `
+            -keyName "testkey"
+
+$modulusBase64 = Convert-FromBase64UrlToBase64($key.key.n)
+$modulus = [Convert]::FromBase64String($modulusBase64)
+
+$exponentBase64 = Convert-FromBase64UrlToBase64($key.key.e)
+$exponent = [Convert]::FromBase64String($exponentBase64)
+
+$verifyResult = Verify-KeyVaultDataRsa256Local `
+            -modulus $modulus `
+            -exponent $exponent `
+            -data $plainByteArray `
+            -signatureBase64Url $signResult
+
+If ($verifyResult) {
+    Write-Host "Local signing and verification worked succesfully!"
+}
+else {
+    Write-Host "Something went wrong..."
 }
 ```

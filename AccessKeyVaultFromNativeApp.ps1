@@ -482,7 +482,7 @@ $modulus = [Convert]::FromBase64String($modulusBase64)
 $exponentBase64 = Convert-FromBase64UrlToBase64($key.key.e)
 $exponent = [Convert]::FromBase64String($exponentBase64)
 
-$encryptValue = Encrypt-KeyVaultDataRsaOaepLocal `
+$encryptResult = Encrypt-KeyVaultDataRsaOaepLocal `
             -modulus $modulus `
             -exponent $exponent `
             -plainByteArray $plainByteArray
@@ -492,7 +492,7 @@ $decryptResult = Decrypt-KeyVaultDataRsaOaep `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
             -keyVersion "" `
-            -cipherBase64Url $encryptValue
+            -cipherBase64Url $encryptResult
 
 If ($plainString -eq [System.Text.Encoding]::Unicode.GetString($decryptResult)) {
     Write-Host "Local encryption and decryption worked succesfully!"
@@ -510,7 +510,7 @@ $plainByteArray = [System.Text.Encoding]::Unicode.GetBytes($plainString)
 $sha256 = New-Object System.Security.Cryptography.SHA256CryptoServiceProvider
 $hash = $sha256.ComputeHash($plainByteArray)
 
-$signatureBase64Url = Sign-KeyVaultDataRsa256 `
+$signResult = Sign-KeyVaultDataRsa256 `
             -accessToken $accessToken `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
@@ -522,7 +522,7 @@ $verifyResult = Verify-KeyVaultDataRsa256 `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
             -keyVersion "" `
-            -signatureBase64Url $signatureBase64Url `
+            -signatureBase64Url $signResult `
             -digestByteArray $hash
 
 If ($verifyResult) {
@@ -541,7 +541,7 @@ $plainByteArray = [System.Text.Encoding]::Unicode.GetBytes($plainString)
 $sha256 = New-Object System.Security.Cryptography.SHA256CryptoServiceProvider
 $hash = $sha256.ComputeHash($plainByteArray)
 
-$signatureBase64Url = Sign-KeyVaultDataRsa256 `
+$signResult = Sign-KeyVaultDataRsa256 `
             -accessToken $accessToken `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
@@ -563,7 +563,7 @@ $verifyResult = Verify-KeyVaultDataRsa256Local `
             -modulus $modulus `
             -exponent $exponent `
             -data $plainByteArray `
-            -signatureBase64Url $signatureBase64Url
+            -signatureBase64Url $signResult
 
 If ($verifyResult) {
     Write-Host "Local signing and verification worked succesfully!"
