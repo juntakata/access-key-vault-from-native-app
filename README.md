@@ -88,7 +88,7 @@ $keyGet = Get-KeyVaultKey `
 ```json
 {
     "key": {
-        "kid": "https://yourkeyvaultname.vault.azure.net/keys/testKey/25f66f574aa64bc5829139082e3ace63",
+        "kid": "https://{vaultName}.vault.azure.net/keys/{keyName}/25f66f574aa64bc5829139082e3ace63",
         "kty": "RSA",
         "key_ops": [
             "encrypt",
@@ -151,7 +151,7 @@ $secretGet = Get-KeyVaultSecret `
 ```json
 {
     "value": "Pa$$w0rd",
-    "id": "https://yourkeyvaultname.vault.azure.net/secrets/testsecret/886048f39c0d48c59bf66b25a4a0305c",
+    "id": "https://{vaultName}.vault.azure.net/secrets/{secretName}/886048f39c0d48c59bf66b25a4a0305c",
     "attributes": {
         "enabled": true,
         "created": 1536834955,
@@ -196,7 +196,7 @@ $modulus = [Convert]::FromBase64String($modulusBase64)
 $exponentBase64 = Convert-FromBase64UrlToBase64($key.key.e)
 $exponent = [Convert]::FromBase64String($exponentBase64)
 
-$encryptValue = Encrypt-KeyVaultDataRsaOaepLocal `
+$encryptResult = Encrypt-KeyVaultDataRsaOaepLocal `
             -modulus $modulus `
             -exponent $exponent `
             -plainByteArray $plainByteArray
@@ -213,7 +213,7 @@ $decryptResult = Decrypt-KeyVaultDataRsaOaep `
             -cipherBase64Url $encryptResult
 
 If ($plainString -eq [System.Text.Encoding]::Unicode.GetString($decryptResult)) {
-    Write-Host "Encryption and decryption worked succesfully!"
+    Write-Host "Encryption and decryption worked successfully!"
 }
 else {
     Write-Host "Something went wrong..."
@@ -253,7 +253,7 @@ $verifyResult = Verify-KeyVaultDataRsa256 `
             -digestByteArray $hash
 
 If ($verifyResult) {
-    Write-Host "Signing and verification worked succesfully!"
+    Write-Host "Signing and verification worked successfully!"
 }
 else {
     Write-Host "Something went wrong..."
@@ -283,7 +283,7 @@ $verifyResult = Verify-KeyVaultDataRsa256Local `
             -signatureBase64Url $signResult
 
 If ($verifyResult) {
-    Write-Host "Local signing and verification worked succesfully!"
+    Write-Host "Local signing and verification worked successfully!"
 }
 else {
     Write-Host "Something went wrong..."
