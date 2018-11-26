@@ -231,7 +231,7 @@ $plainByteArray = [System.Text.Encoding]::Unicode.GetBytes($plainString)
 $sha256 = New-Object System.Security.Cryptography.SHA256CryptoServiceProvider
 $hash = $sha256.ComputeHash($plainByteArray)
 
-$signatureBase64Url = Sign-KeyVaultDataRsa256 `
+$signResult = Sign-KeyVaultDataRsa256 `
             -accessToken $accessToken `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
@@ -279,7 +279,7 @@ $exponent = [Convert]::FromBase64String($exponentBase64)
 $verifyResult = Verify-KeyVaultDataRsa256Local `
             -modulus $modulus `
             -exponent $exponent `
-            -data $plainByteArray `
+            -plainByteArray $plainByteArray `
             -signatureBase64Url $signResult
 
 If ($verifyResult) {
