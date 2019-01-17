@@ -150,7 +150,7 @@ Function Get-KeyVaultSecret {
     }
 }
 
-Function Encrypt-KeyVaultDataRsaOaep {
+Function Encrypt-KeyVaultplainByteArrayRsaOaep {
     [CmdletBinding()]
     param (
         [parameter(Mandatory=$true)]
@@ -189,7 +189,7 @@ Function Encrypt-KeyVaultDataRsaOaep {
     }
 }
 
-Function Encrypt-KeyVaultDataRsaOaepLocal {
+Function Encrypt-KeyVaultplainByteArrayRsaOaepLocal {
     [CmdletBinding()]
     param (
         [parameter(Mandatory=$true)]
@@ -215,7 +215,7 @@ Function Encrypt-KeyVaultDataRsaOaepLocal {
     return $base64Url
 }
 
-Function Decrypt-KeyVaultDataRsaOaep {
+Function Decrypt-KeyVaultplainByteArrayRsaOaep {
     [CmdletBinding()]
     param (
         [parameter(Mandatory=$true)]
@@ -256,7 +256,7 @@ Function Decrypt-KeyVaultDataRsaOaep {
     }
 }
 
-Function Sign-KeyVaultDataRsa256 {
+Function Sign-KeyVaultplainByteArrayRsa256 {
     [CmdletBinding()]
     param (
         [parameter(Mandatory=$true)]
@@ -296,7 +296,7 @@ Function Sign-KeyVaultDataRsa256 {
     }
 }
 
-Function Verify-KeyVaultDataRsa256 {
+Function Verify-KeyVaultplainByteArrayRsa256 {
     [CmdletBinding()]
     param (
         [parameter(Mandatory=$true)]
@@ -339,7 +339,7 @@ Function Verify-KeyVaultDataRsa256 {
     }
 }
 
-Function Verify-KeyVaultDataRsa256Local {
+Function Verify-KeyVaultplainByteArrayRsa256Local {
     [CmdletBinding()]
     param (
         [parameter(Mandatory=$true)]
@@ -349,7 +349,7 @@ Function Verify-KeyVaultDataRsa256Local {
         [byte[]]$exponent,
 
         [parameter(Mandatory=$true)]
-        [byte[]]$data,
+        [byte[]]$plainByteArray,
 
         [parameter(Mandatory=$true)]
         [string]$signatureBase64Url
@@ -365,7 +365,7 @@ Function Verify-KeyVaultDataRsa256Local {
     $sha256 = New-Object System.Security.Cryptography.SHA256CryptoServiceProvider
     $base64 = Convert-FromBase64UrlToBase64($signatureBase64Url)
     $byteArray = [convert]::FromBase64String($base64)
-    $result = $rsa.VerifyData($data, $sha256, $byteArray)
+    $result = $rsa.VerifyData($plainByteArray, $sha256, $byteArray)
 
     return $result
 }
@@ -403,8 +403,8 @@ Function Convert-FromBase64ToBase64Url {
 # Get Access token
 #
 $accessToken = Get-KeyVaultUserAccessToken `
-            -tenantId "yourtenant.onmicrosoft.com" `
-            -clientId "FEDCBA98-7654-3210-FEDC-BA9876543210" `
+            -tenantId "jutakata02.onmicrosoft.com" `
+            -clientId "b10aaa97-2d73-46b2-900d-626b2e90581e" `
             -redirectUri "urn:ietf:wg:oauth:2.0:oob"
 
 #
@@ -436,7 +436,7 @@ $secretGet = Get-KeyVaultSecret `
             -vaultName "keyvlt-prod-kv1" `
             -secretName "testsecret"
 
-Write-Host "Secret: " + $secretGet.value
+Write-Host "Secret: " $secretGet.value
 
 #
 # Encrypt and decrypt via Key Vault
@@ -444,14 +444,14 @@ Write-Host "Secret: " + $secretGet.value
 $plainString = "Hello World!"
 $plainByteArray = [System.Text.Encoding]::Unicode.GetBytes($plainString)
 
-$encryptResult = Encrypt-KeyVaultDataRsaOaep `
+$encryptResult = Encrypt-KeyVaultplainByteArrayRsaOaep `
             -accessToken $accessToken `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
             -keyVersion "" `
             -plainByteArray $plainByteArray
 
-$decryptResult = Decrypt-KeyVaultDataRsaOaep `
+$decryptResult = Decrypt-KeyVaultplainByteArrayRsaOaep `
             -accessToken $accessToken `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
@@ -459,7 +459,7 @@ $decryptResult = Decrypt-KeyVaultDataRsaOaep `
             -cipherBase64Url $encryptResult
 
 If ($plainString -eq [System.Text.Encoding]::Unicode.GetString($decryptResult)) {
-    Write-Host "Encryption and decryption worked succesfully!"
+    Write-Host "Encryption and decryption worked successfully!"
 }
 else {
     Write-Host "Something went wrong..."
@@ -482,12 +482,12 @@ $modulus = [Convert]::FromBase64String($modulusBase64)
 $exponentBase64 = Convert-FromBase64UrlToBase64($key.key.e)
 $exponent = [Convert]::FromBase64String($exponentBase64)
 
-$encryptResult = Encrypt-KeyVaultDataRsaOaepLocal `
+$encryptResult = Encrypt-KeyVaultplainByteArrayRsaOaepLocal `
             -modulus $modulus `
             -exponent $exponent `
             -plainByteArray $plainByteArray
 
-$decryptResult = Decrypt-KeyVaultDataRsaOaep `
+$decryptResult = Decrypt-KeyVaultplainByteArrayRsaOaep `
             -accessToken $accessToken `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
@@ -495,7 +495,7 @@ $decryptResult = Decrypt-KeyVaultDataRsaOaep `
             -cipherBase64Url $encryptResult
 
 If ($plainString -eq [System.Text.Encoding]::Unicode.GetString($decryptResult)) {
-    Write-Host "Local encryption and decryption worked succesfully!"
+    Write-Host "Local encryption and decryption worked successfully!"
 }
 else {
     Write-Host "Something went wrong..."
@@ -510,14 +510,14 @@ $plainByteArray = [System.Text.Encoding]::Unicode.GetBytes($plainString)
 $sha256 = New-Object System.Security.Cryptography.SHA256CryptoServiceProvider
 $hash = $sha256.ComputeHash($plainByteArray)
 
-$signResult = Sign-KeyVaultDataRsa256 `
+$signResult = Sign-KeyVaultplainByteArrayRsa256 `
             -accessToken $accessToken `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
             -keyVersion "" `
             -digestByteArray $hash
 
-$verifyResult = Verify-KeyVaultDataRsa256 `
+$verifyResult = Verify-KeyVaultplainByteArrayRsa256 `
             -accessToken $accessToken `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
@@ -526,7 +526,7 @@ $verifyResult = Verify-KeyVaultDataRsa256 `
             -digestByteArray $hash
 
 If ($verifyResult) {
-    Write-Host "Signing and verification worked succesfully!"
+    Write-Host "Signing and verification worked successfully!"
 }
 else {
     Write-Host "Something went wrong..."
@@ -541,7 +541,7 @@ $plainByteArray = [System.Text.Encoding]::Unicode.GetBytes($plainString)
 $sha256 = New-Object System.Security.Cryptography.SHA256CryptoServiceProvider
 $hash = $sha256.ComputeHash($plainByteArray)
 
-$signResult = Sign-KeyVaultDataRsa256 `
+$signResult = Sign-KeyVaultplainByteArrayRsa256 `
             -accessToken $accessToken `
             -vaultName "keyvlt-prod-kv1" `
             -keyName "testkey" `
@@ -559,14 +559,14 @@ $modulus = [Convert]::FromBase64String($modulusBase64)
 $exponentBase64 = Convert-FromBase64UrlToBase64($key.key.e)
 $exponent = [Convert]::FromBase64String($exponentBase64)
 
-$verifyResult = Verify-KeyVaultDataRsa256Local `
+$verifyResult = Verify-KeyVaultplainByteArrayRsa256Local `
             -modulus $modulus `
             -exponent $exponent `
-            -data $plainByteArray `
+            -plainByteArray $plainByteArray `
             -signatureBase64Url $signResult
 
 If ($verifyResult) {
-    Write-Host "Local signing and verification worked succesfully!"
+    Write-Host "Local signing and verification worked successfully!"
 }
 else {
     Write-Host "Something went wrong..."
